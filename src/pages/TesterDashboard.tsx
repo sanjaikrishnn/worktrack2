@@ -103,7 +103,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
 
   const filteredTasks = tasks.filter((t) => {
     if (statusFilter === 'pass') return t.qaStatus === 'Pass';
-    if (statusFilter === 'fail') return t.qaStatus === 'Fail' || t.status === 'reopened';
+    if (statusFilter === 'fail') return t.qaStatus === 'Fail';
     if (statusFilter === 'pending') return !t.qaStatus || t.qaStatus === 'Pending';
     return true;
   });
@@ -111,24 +111,24 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#FAF6EF] rounded-2xl p-6 border-2 border-[#DCC7A1] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-[#2563EB] text-[11px] font-bold border border-blue-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#E8F2EC] text-[#2E6B50] text-[11px] font-bold border border-[#2E6B50]/30">
               QA Verification & Quality Control
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#172033] tracking-tight">
             QA Dashboard
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-[#5C675E] mt-1 font-medium">
             Inspect delivered operational tasks, record Pass/Fail verification verdicts, and trigger corrective workflows.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={onRefresh}
-            className="px-4 py-2 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-xs font-semibold text-[#172033] rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#FAF6EF] border border-[#DCC7A1] hover:bg-[#EFE5D3] text-xs font-bold text-[#2E6B50] rounded-xl transition-colors cursor-pointer"
           >
             Refresh Pipeline
           </button>
@@ -138,35 +138,35 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
       {/* 3 Real Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Modules */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
+        <div className="bg-[#FAF6EF] rounded-2xl p-5 border border-[#DCC7A1] shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#E8F2EC] text-[#2E6B50] flex items-center justify-center shrink-0">
             <Layers className="w-6 h-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-xs text-[#64748B] font-medium">Total Testable Modules</p>
-            <p className="text-2xl font-bold text-[#172033] mt-0.5">{totalModules}</p>
+            <p className="text-xs text-[#5C675E] font-medium">Total Testable Modules</p>
+            <p className="text-2xl font-black text-[#172033] mt-0.5">{totalModules}</p>
           </div>
         </div>
 
         {/* Tested Modules (Pass) */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="bg-[#FAF6EF] rounded-2xl p-5 border border-[#DCC7A1] shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-xs text-[#64748B] font-medium">Verified & Passed</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-0.5">{passedCount}</p>
+            <p className="text-xs text-[#5C675E] font-medium">Verified & Passed</p>
+            <p className="text-2xl font-black text-emerald-700 mt-0.5">{passedCount}</p>
           </div>
         </div>
 
         {/* Bugs Found (Defects / Fail) */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-xs flex items-center gap-4">
+        <div className="bg-[#FAF6EF] rounded-2xl p-5 border border-[#DCC7A1] shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
             <Bug className="w-6 h-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-xs text-[#64748B] font-medium">Defects Identified</p>
-            <p className="text-2xl font-bold text-rose-600 mt-0.5">{bugsFoundCount}</p>
+            <p className="text-xs text-[#5C675E] font-medium">Defects Identified</p>
+            <p className="text-2xl font-black text-rose-600 mt-0.5">{bugsFoundCount}</p>
           </div>
         </div>
       </div>
@@ -174,26 +174,34 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
       {/* Main Grid: Submitted Modules Table & Create Bug Report Form */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Submitted Modules Table */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="lg:col-span-7 bg-[#FAF6EF] rounded-2xl border border-[#DCC7A1] shadow-xs overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-[#DCC7A1]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-[#172033] text-base">Submitted Modules</h3>
-              <p className="text-xs text-[#64748B]">Active QA verification pipeline and inspection records</p>
+              <p className="text-xs text-[#5C675E]">Active QA verification pipeline and inspection records</p>
             </div>
             {/* Filter buttons */}
-            <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-1.5 bg-[#F5EFE3] p-1 rounded-xl border border-[#DCC7A1]">
               <button
                 onClick={() => setStatusFilter('all')}
                 className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors cursor-pointer ${
-                  statusFilter === 'all' ? 'bg-white text-[#172033] shadow-xs' : 'text-[#64748B] hover:text-[#172033]'
+                  statusFilter === 'all' ? 'bg-[#2E6B50] text-white shadow-xs' : 'text-[#5C675E] hover:text-[#2E6B50]'
                 }`}
               >
                 All ({tasks.length})
               </button>
               <button
+                onClick={() => setStatusFilter('pending')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors cursor-pointer ${
+                  statusFilter === 'pending' ? 'bg-[#2E6B50] text-white shadow-xs' : 'text-[#5C675E] hover:text-[#2E6B50]'
+                }`}
+              >
+                Pending ({tasks.filter(t => !t.qaStatus || t.qaStatus === 'Pending').length})
+              </button>
+              <button
                 onClick={() => setStatusFilter('pass')}
                 className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors cursor-pointer ${
-                  statusFilter === 'pass' ? 'bg-emerald-100 text-emerald-800 shadow-xs' : 'text-[#64748B] hover:text-emerald-700'
+                  statusFilter === 'pass' ? 'bg-emerald-700 text-white shadow-xs' : 'text-[#5C675E] hover:text-emerald-700'
                 }`}
               >
                 Pass ({passedCount})
@@ -201,7 +209,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
               <button
                 onClick={() => setStatusFilter('fail')}
                 className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors cursor-pointer ${
-                  statusFilter === 'fail' ? 'bg-rose-100 text-rose-800 shadow-xs' : 'text-[#64748B] hover:text-rose-700'
+                  statusFilter === 'fail' ? 'bg-rose-700 text-white shadow-xs' : 'text-[#5C675E] hover:text-rose-700'
                 }`}
               >
                 Fail ({failedCount})
@@ -212,7 +220,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-[#E2E8F0] text-[#64748B] font-semibold">
+                <tr className="bg-[#F5EFE3] border-b border-[#DCC7A1] text-[#5C675E] font-semibold">
                   <th className="py-3 px-4">Module</th>
                   <th className="py-3 px-4">Author</th>
                   <th className="py-3 px-4">QA Status</th>
@@ -220,21 +228,21 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-[#172033]">
+              <tbody className="divide-y divide-[#DCC7A1]/40 text-[#172033]">
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-[#64748B]">
+                    <td colSpan={5} className="py-8 text-center text-[#5C675E]">
                       No modules found matching filter.
                     </td>
                   </tr>
                 ) : (
                   filteredTasks.map((t) => {
-                    const isPass = t.qaStatus === 'Pass';
-                    const isFail = t.qaStatus === 'Fail' || t.status === 'reopened';
-                    const isPending = !isPass && !isFail;
+                    const isPending = !t.qaStatus || t.qaStatus === 'Pending';
+                    const isPass = !isPending && t.qaStatus === 'Pass';
+                    const isFail = !isPending && t.qaStatus === 'Fail';
 
                     // Format tested date
-                    let dateDisplay = 'Pending';
+                    let dateDisplay = 'Pending Inspection';
                     if (t.qaVerifiedAt) {
                       dateDisplay = new Date(t.qaVerifiedAt).toLocaleDateString('en-US', {
                         day: 'numeric',
@@ -253,49 +261,60 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                     }
 
                     return (
-                      <tr key={t.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={t.id} className="hover:bg-[#EFE5D3]/40 transition-colors">
                         <td className="py-3.5 px-4 font-bold text-[#172033]">
                           <div className="flex flex-col">
-                            <span className="font-bold text-[#172033] hover:text-[#2563EB] transition-colors cursor-pointer" onClick={() => onOpenTask(t.taskId)}>
+                            <span className="font-bold text-[#172033] hover:text-[#2E6B50] transition-colors cursor-pointer" onClick={() => onOpenTask(t.taskId)}>
                               {t.moduleName}
                             </span>
-                            <span className="text-[10px] text-[#64748B] font-mono">{t.taskId}</span>
+                            <span className="text-[10px] text-[#5C675E] font-mono">{t.taskId}</span>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-[#64748B] font-medium">
+                        <td className="py-3.5 px-4 text-[#5C675E] font-medium">
                           {t.assignedToName || t.originalDelivererName || 'John Doe'}
                         </td>
                         <td className="py-3.5 px-4">
                           {/* Pass/Fail status badges */}
                           {isPass && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                               Pass
                             </span>
                           )}
                           {isFail && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
                               <AlertOctagon className="w-3 h-3 text-rose-600 shrink-0" />
                               Fail
                             </span>
                           )}
                           {isPending && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                              <Clock className="w-3 h-3 text-amber-500 shrink-0" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                              <Clock className="w-3 h-3 text-amber-600 shrink-0" />
                               Pending
                             </span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-[#64748B] font-medium">{dateDisplay}</td>
+                        <td className="py-3.5 px-4 text-[#5C675E] font-medium">{dateDisplay}</td>
                         <td className="py-3.5 px-4 text-right">
-                          {/* Inspected button: white background, blue border and text */}
-                          <button
-                            onClick={() => onOpenTask(t.taskId)}
-                            className="bg-white border border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-bold px-3 py-1 rounded-lg text-xs transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1"
-                            title={`Inspect ${t.taskId} - ${t.moduleName}`}
-                          >
-                            Inspected
-                          </button>
+                          {isPending ? (
+                            <button
+                              onClick={() => onOpenTask(t.taskId)}
+                              className="bg-[#2E6B50] hover:bg-[#23543E] text-white font-black px-3.5 py-1.5 rounded-lg text-xs tracking-wider transition-all shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+                              title={`Inspect ${t.taskId} - ${t.moduleName}`}
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-200" />
+                              INSPECT
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => onOpenTask(t.taskId)}
+                              className="bg-[#FAF6EF] border-2 border-[#2E6B50] text-[#2E6B50] hover:bg-[#DCC7A1]/40 font-black px-3 py-1 rounded-lg text-xs tracking-wider transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
+                              title={`Already inspected: ${t.taskId} - ${t.moduleName}`}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#2E6B50]" />
+                              INSPECTED
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -304,21 +323,21 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
               </tbody>
             </table>
           </div>
-          <div className="p-3 bg-slate-50 border-t border-slate-100 text-[11px] text-[#64748B] flex items-center justify-between">
+          <div className="p-3 bg-[#F5EFE3] border-t border-[#DCC7A1] text-[11px] text-[#5C675E] flex items-center justify-between">
             <span>Showing {filteredTasks.length} real operational deliverables</span>
-            <span className="font-semibold text-teal-700">Database Synced</span>
+            <span className="font-semibold text-[#2E6B50]">Database Synced</span>
           </div>
         </div>
 
         {/* Right Column: Create Bug Report Form */}
-        <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-xs">
+        <div className="lg:col-span-5 bg-[#FAF6EF] rounded-2xl p-6 border border-[#DCC7A1] shadow-xs">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
               <Bug className="w-4 h-4" />
             </div>
             <h3 className="font-bold text-[#172033] text-base">Submit New Defect Report</h3>
           </div>
-          <p className="text-xs text-[#64748B] mb-5">
+          <p className="text-xs text-[#5C675E] mb-5">
             Logs reproducible defect, automatically reopens affected task, and preserves delivering author.
           </p>
 
@@ -347,7 +366,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                 value={bugTitle}
                 onChange={(e) => setBugTitle(e.target.value)}
                 placeholder="e.g. Login validation failure on special characters"
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 font-medium"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900 font-medium"
               />
             </div>
 
@@ -359,7 +378,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                 <select
                   value={selectedTask}
                   onChange={(e) => handleTaskChange(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-slate-900 font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900 font-medium"
                 >
                   {tasks.map((t) => (
                     <option key={t.id} value={t.taskId}>
@@ -374,7 +393,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                 <select
                   value={severity}
                   onChange={(e) => setSeverity(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-slate-900 font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900 font-medium"
                 >
                   <option value="High">High Severity (Blocker)</option>
                   <option value="Medium">Medium Severity (Major)</option>
@@ -393,7 +412,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Explain the failure mode and symptoms in detail..."
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900"
               />
             </div>
 
@@ -404,7 +423,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                 value={steps}
                 onChange={(e) => setSteps(e.target.value)}
                 placeholder="1. Enter valid username&#10;2. Enter password with special symbols&#10;3. Click login"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 font-mono text-[11px]"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900 font-mono text-[11px]"
               />
             </div>
 
@@ -416,7 +435,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                   value={expected}
                   onChange={(e) => setExpected(e.target.value)}
                   placeholder="e.g. Validation error displayed"
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900"
                 />
               </div>
 
@@ -427,7 +446,7 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                   value={actual}
                   onChange={(e) => setActual(e.target.value)}
                   placeholder="e.g. Uncaught 500 error"
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#DCC7A1] focus:outline-none focus:ring-2 focus:ring-[#2E6B50] bg-[#F5EFE3] text-slate-900"
                 />
               </div>
             </div>
@@ -441,16 +460,16 @@ export const TesterDashboard: React.FC<TesterDashboardProps> = ({
                     setEvidenceName(e.target.files[0].name);
                   }
                 }}
-                className="block w-full text-xs text-[#64748B] file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                className="block w-full text-xs text-[#5C675E] file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#E8F2EC] file:text-[#2E6B50] hover:file:bg-[#D2E6DC] cursor-pointer"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-corporate-gradient text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 bg-[#2E6B50] hover:bg-[#23543E] text-white font-bold text-xs rounded-xl shadow-md shadow-[#2E6B50]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4 text-[#DCC7A1]" />
               {loading ? 'Submitting Defect...' : 'Submit Defect to Manager'}
             </button>
           </form>

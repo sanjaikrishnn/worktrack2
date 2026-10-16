@@ -299,38 +299,68 @@ payrollRouter.get('/detailed-report', requireAuth, async (req: Request, res: Res
 // GET /api/payroll/export-csv - Download reports as CSV directly from PostgreSQL
 payrollRouter.get('/export-csv', requireAuth, async (req: Request, res: Response) => {
   const user = (req as any).user as User;
-  if (user.role !== 'manager' && user.role !== 'admin') {
-    return res.status(403).json({ error: 'Manager access required.' });
-  }
 
   try {
-    const timeEntries = await pgDb.getCorrectiveEntries();
+    const { fromDate, toDate, employeeId } = req.query as {
+      fromDate?: string;
+      toDate?: string;
+      employeeId?: string;
+    };
+
+    let timeEntries: CorrectiveTimeEntry[] = [];
+    if (user.role === 'employee') {
+      timeEntries = await pgDb.getCorrectiveEntries(user.id);
+    } else if (employeeId && employeeId !== 'all') {
+      timeEntries = await pgDb.getCorrectiveEntries(employeeId);
+    } else {
+      timeEntries = await pgDb.getCorrectiveEntries();
+    }
+
+    // Filter by dates if provided
+    if (fromDate) {
+      const from = new Date(fromDate).getTime();
+      timeEntries = timeEntries.filter((e) => new Date(e.entryDate).getTime() >= from);
+    }
+    if (toDate) {
+      const to = new Date(toDate).getTime() + 86400000; // include full day
+      timeEntries = timeEntries.filter((e) => new Date(e.entryDate).getTime() <= to);
+    }
+
     const allUsers = await pgDb.getUsers();
     const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
-    let csv = 'Entry ID,Employee ID,Employee Name,Task ID,Module,Bug ID,Hours,Hourly Rate (INR),Calculated Cost (INR),Proposed Deduction (INR),Status,Date\n';
+    // Include UTF-8 BOM (\uFEFF) for full Excel / Numbers / LibreOffice compatibility
+    let csv = '\uFEFF';
+    csv += 'Entry ID,Employee ID,Employee Name,Task ID,Module,Bug ID,Hours,Hourly Rate (INR),Calculated Cost (INR),Proposed Deduction (INR),Status,Date\n';
 
-    for (const e of timeEntries) {
-      const emp = userMap.get(e.employeeId);
-      const line = [
-        e.id,
-        emp ? emp.empId : 'N/A',
-        `"${emp ? emp.name : 'Unknown'}"`,
-        e.taskId,
-        `"${e.moduleName}"`,
-        e.bugId,
-        e.hoursDisplay,
-        e.hourlyRate,
-        e.calculatedCost,
-        e.proposedDeduction,
-        e.status,
-        `"${e.entryDate}"`,
-      ].join(',');
-      csv += line + '\n';
+    if (timeEntries.length === 0) {
+      // If no entries, still supply at least header and a summary line
+      csv += `CTE-NONE,${user.empId},"${user.name}",N/A,"No Recorded Rework",N/A,0h 00m,${user.hourlyRate},0,0,Clear,"${new Date().toISOString().slice(0, 10)}"\n`;
+    } else {
+      for (const e of timeEntries) {
+        const emp = userMap.get(e.employeeId) || user;
+        const line = [
+          e.id,
+          emp ? emp.empId : 'N/A',
+          `"${(emp ? emp.name : 'Unknown').replace(/"/g, '""')}"`,
+          e.taskId,
+          `"${(e.moduleName || 'General').replace(/"/g, '""')}"`,
+          e.bugId,
+          `"${e.hoursDisplay || '0h'}"`,
+          e.hourlyRate,
+          e.calculatedCost,
+          e.proposedDeduction,
+          e.status,
+          `"${e.entryDate}"`,
+        ].join(',');
+        csv += line + '\n';
+      }
     }
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="worktrack_rework_report.csv"');
+    const filename = `worktrack_rework_report_${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-cache');
     res.send(csv);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to export CSV: ' + err.message });

@@ -67,7 +67,7 @@ tasksRouter.post('/', requireAuth, async (req: Request, res: Response) => {
       taskId,
       title,
       description: description || '',
-      moduleId: null,
+      moduleId: undefined,
       moduleName,
       assignedToUserId,
       originalDeliveryUserId: assignedToUserId,

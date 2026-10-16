@@ -1,39 +1,85 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy: #12345A;
-  --color-navy-dark: #0A1E34;
-  --color-navy-light: #1A4676;
-  --color-industrial-blue: #2563EB;
-  --color-industrial-blue-hover: #1D4ED8;
-  --color-teal-accent: #0D9488;
-  --color-teal-dark: #0F766E;
-  --color-teal-light: #14B8A6;
-  --color-canvas: #F5F7FB;
-  --color-card: #FFFFFF;
+  --color-brand-green: #2E6B50;
+  --color-brand-green-hover: #23543E;
+  --color-brand-green-dark: #163A2B;
+  --color-brand-green-light: #3D8867;
+  --color-brand-green-soft: #E8F2EC;
+
+  --color-brand-sandal: #DCC7A1;
+  --color-brand-sandal-dark: #C6B086;
+  --color-brand-sandal-light: #EFE4D0;
+  --color-brand-sandal-soft: #FAF6EF;
+  --color-brand-sandal-cream: #F5EFE3;
+
+  --color-green-primary: #2E6B50;
+  --color-green-dark: #163A2B;
+  --color-green-light: #3D8867;
+  --color-green-hover: #23543E;
+
+  --color-sandal: #DCC7A1;
+  --color-sandal-dark: #C6B086;
+  --color-sandal-light: #EFE4D0;
+  --color-sandal-soft: #FAF6EF;
+
+  --color-navy: #163A2B;
+  --color-navy-dark: #102B20;
+  --color-navy-light: #1F4D39;
+
+  --color-industrial-blue: #2E6B50;
+  --color-industrial-blue-hover: #23543E;
+
+  --color-teal-accent: #2E6B50;
+  --color-teal-dark: #163A2B;
+  --color-teal-light: #4A9C78;
+
+  --color-canvas: #F5EFE3;
+  --color-card: #FAF6EF;
   --color-text-main: #172033;
-  --color-text-muted: #64748B;
-  --color-border-subtle: #E2E8F0;
-  --color-surface-hover: #F1F5F9;
+  --color-text-muted: #5C675E;
+  --color-border-subtle: #DCC7A1;
+  --color-surface-hover: #EFE5D3;
 }
 
 @layer utilities {
   .bg-corporate-gradient {
-    background: linear-gradient(120deg, #12345A 0%, #2563EB 52%, #0D9488 100%);
+    background: linear-gradient(135deg, #163A2B 0%, #2E6B50 60%, #C6B086 100%);
   }
 
   .bg-corporate-soft {
-    background: linear-gradient(135deg, #EFF6FF 0%, #F0FDFA 100%);
+    background: linear-gradient(135deg, #FAF6EF 0%, #F5EFE3 50%, #EFE4D0 100%);
+  }
+
+  .bg-sandal-card {
+    background-color: #FAF6EF;
+    border-color: #DCC7A1;
   }
 
   .border-corporate-gradient {
-    border-image: linear-gradient(120deg, #12345A 0%, #2563EB 52%, #0D9488 100%) 1;
+    border-image: linear-gradient(135deg, #163A2B 0%, #2E6B50 50%, #DCC7A1 100%) 1;
   }
 }
 
 body {
-  background-color: #F5F7FB;
+  background-color: #F5EFE3;
   color: #172033;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars with brand green and sandal thumb */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #F5EFE3;
+}
+::-webkit-scrollbar-thumb {
+  background: #DCC7A1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2E6B50;
 }

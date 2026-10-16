@@ -49,14 +49,22 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
   const [selectedBugId, setSelectedBugId] = useState<string>(defaultBug?.bugId || 'BUG-004');
   const [currentBug, setCurrentBug] = useState<BugReport | undefined>(defaultBug);
 
-  // States for the 4 sub-screens shown in Image 2
+  // States for authentication and rework access
   const [isAuthenticatedForRework, setIsAuthenticatedForRework] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(true);
 
-  // Timer states
+  // Timer states - strictly starts from 0hr : 0sec
   const [isRunning, setIsRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(9378); // default ~ 02:36:18
-  const [startedAtStr, setStartedAtStr] = useState('16 Oct 2025, 11:24 AM');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0); // 0hr : 0sec
+  const [startedAtStr, setStartedAtStr] = useState(
+    new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date())
+  );
 
   // Fix form
   const [fixDescription, setFixDescription] = useState(
@@ -68,7 +76,7 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Confirmation screen state (Image 2: Sub-screen 4)
+  // Confirmation screen state
   const [confirmationData, setConfirmationData] = useState<{
     bugId: string;
     taskId: string;
@@ -87,40 +95,24 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
     }
   }, [selectedBugId, bugs]);
 
-  // Load persistent rework session from backend
+  // When current bug changes or component mounts, reset authentication and prompt for password
   useEffect(() => {
-    if (!currentBug) return;
-    apiGetReworkSession(currentBug.bugId).then((res) => {
-      if (res.session) {
-        setIsAuthenticatedForRework(true);
-        setIsRunning(res.isRunning);
-        setElapsedSeconds(res.elapsedSeconds || 9378);
-        if (res.session.startedAt) {
-          const d = new Date(res.session.startedAt);
-          setStartedAtStr(
-            new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            }).format(d)
-          );
-        }
-      }
-    });
+    setIsAuthenticatedForRework(false);
+    setIsRunning(false);
+    setElapsedSeconds(0);
+    setShowAuthModal(true);
   }, [currentBug?.bugId]);
 
   // Live timer interval
   useEffect(() => {
     let interval: any = null;
-    if (isRunning) {
+    if (isRunning && isAuthenticatedForRework) {
       interval = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, isAuthenticatedForRework]);
 
   const formatTimerDigital = (totalSecs: number) => {
     const h = Math.floor(totalSecs / 3600);
@@ -129,34 +121,49 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  const handleOpenReworkModule = () => {
-    if (!isAuthenticatedForRework) {
-      setShowAuthModal(true);
-    }
+  const formatTimerHuman = (totalSecs: number) => {
+    const h = Math.floor(totalSecs / 3600);
+    const s = totalSecs % 60;
+    return `${h}hr : ${s}sec`;
   };
 
+  const handleOpenReworkModule = () => {
+    setShowAuthModal(true);
+  };
+
+  // Triggered when employee successfully authenticates via AuthModal
   const handleAuthSuccess = async () => {
     setShowAuthModal(false);
     setIsAuthenticatedForRework(true);
+    setElapsedSeconds(0); // Starts fresh from 0hr : 0sec
+    setIsRunning(true);
+    const nowStr = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date());
+    setStartedAtStr(nowStr);
+
     if (currentBug) {
       try {
-        const res = await apiStartTimer(currentBug.bugId);
-        setIsRunning(true);
-        if (res.elapsedSeconds) setElapsedSeconds(res.elapsedSeconds);
-      } catch {
-        setIsRunning(true);
+        // Authoritatively start/reset timer on server to 0 accumulated seconds
+        await apiStartTimer(currentBug.bugId, true);
+      } catch (err) {
+        console.error('Failed to start timer on backend:', err);
       }
     }
   };
 
   const handleToggleTimer = async () => {
-    if (!currentBug) return;
+    if (!currentBug || !isAuthenticatedForRework) return;
     try {
       if (isRunning) {
         await apiPauseTimer(currentBug.bugId);
         setIsRunning(false);
       } else {
-        await apiStartTimer(currentBug.bugId);
+        await apiStartTimer(currentBug.bugId, false);
         setIsRunning(true);
       }
     } catch (err: any) {
@@ -288,8 +295,10 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
               setSelectedBugId(e.target.value);
               setIsAuthenticatedForRework(false);
               setIsRunning(false);
+              setElapsedSeconds(0);
+              setShowAuthModal(true);
             }}
-            className="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             {userBugs.map((b) => (
               <option key={b.id} value={b.bugId}>
@@ -300,8 +309,8 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
         </div>
       </div>
 
-      {/* Screen 3: Persistent Timer Banner (Image 2: Sub-screen 3) */}
-      {isAuthenticatedForRework && (
+      {/* Screen 3: Persistent Timer Banner */}
+      {isAuthenticatedForRework ? (
         <div
           className={`border rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
             isRunning
@@ -355,6 +364,9 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
               >
                 {formatTimerDigital(elapsedSeconds)}
               </span>
+              <span className="block text-[11px] font-bold text-slate-600 font-mono mt-0.5">
+                {formatTimerHuman(elapsedSeconds)}
+              </span>
             </div>
 
             <button
@@ -367,6 +379,49 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
             >
               {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               <span>{isRunning ? 'Pause Timer' : 'Resume Timer'}</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-slate-200 bg-slate-50 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Lock className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Timer Locked (Authentication Required)
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 text-slate-700">
+                  Protected
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Authenticate with employee password to unlock the workspace and run timer from 0hr : 0sec.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 self-end sm:self-auto">
+            <div className="text-right">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                Elapsed Time
+              </span>
+              <span className="font-mono text-2xl sm:text-3xl font-black tracking-wider text-slate-400">
+                00:00:00
+              </span>
+              <span className="block text-[11px] font-bold text-slate-400 font-mono mt-0.5">
+                0hr : 0sec
+              </span>
+            </div>
+
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-4 py-2.5 rounded-xl text-white font-bold text-xs flex items-center gap-2 bg-[#2563EB] hover:bg-blue-700 shadow-sm transition-all cursor-pointer"
+            >
+              <Lock className="w-4 h-4" />
+              <span>Authenticate to Start Timer</span>
             </button>
           </div>
         </div>
@@ -497,24 +552,24 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
             </div>
           )}
 
-          {/* "Open Rework Module" button if not authenticated */}
+          {/* "Authenticate to Fix Defect" button if not authenticated */}
           {!isAuthenticatedForRework && (
             <div className="pt-4 border-t border-slate-100">
               <button
                 onClick={handleOpenReworkModule}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Lock className="w-4 h-4" />
-                Open Rework Module
+                Authenticate to Start Bug Fixing
               </button>
               <p className="text-[11px] text-slate-400 text-center mt-2">
-                Requires password authentication before starting timer.
+                Requires password authentication. Rework timer will run from 0hr : 0sec.
               </p>
             </div>
           )}
         </div>
 
-        {/* Right Column: Fix Details Form (Image 2: Sub-screen 3) */}
+        {/* Right Column: Fix Details Form */}
         <div className="lg:col-span-6 bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
           <div className="border-b border-slate-100 pb-3">
             <h3 className="font-bold text-slate-800 text-base">Fix Details</h3>
@@ -522,12 +577,24 @@ export const BugFixingPage: React.FC<BugFixingPageProps> = ({
           </div>
 
           {!isAuthenticatedForRework ? (
-            <div className="py-16 text-center text-slate-400 space-y-3">
-              <Lock className="w-10 h-10 mx-auto text-slate-300" />
-              <p className="text-xs font-medium">
-                Please click <strong className="text-blue-600">"Open Rework Module"</strong> to authenticate and unlock
-                corrective work submission.
-              </p>
+            <div className="py-16 text-center text-slate-400 space-y-4">
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-inner">
+                <Lock className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div className="max-w-xs mx-auto">
+                <p className="text-xs font-bold text-slate-700">Authentication Required to Fix Defect</p>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  Please authenticate with your employee password to unlock corrective work submission and start the rework timer from 0hr : 0sec.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenReworkModule}
+                className="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer inline-flex items-center gap-2"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                Authenticate Now
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmitFix} className="space-y-4 text-xs">

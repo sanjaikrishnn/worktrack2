@@ -94,9 +94,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </div>
         </form>
 
-        <div className="mt-6 pt-5 border-t border-slate-100 flex items-start gap-2.5 text-left text-xs text-slate-500">
-          <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-          <span>Time tracking will start automatically once you successfully authenticate.</span>
+        <div className="mt-6 pt-5 border-t border-slate-100 space-y-1.5 text-left text-xs text-slate-500">
+          <div className="flex items-start gap-2.5">
+            <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <span>Time tracking will start automatically from 0hr : 0sec once you successfully authenticate.</span>
+          </div>
+          <p className="text-[10px] text-slate-400 pl-6.5">
+            Demo account password: <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-600">password123</code>
+          </p>
         </div>
       </div>
     </div>

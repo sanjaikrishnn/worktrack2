@@ -210,10 +210,10 @@ export async function apiGetReworkSession(bugId: string) {
   return apiFetch<{ session: WorkSession | null; elapsedSeconds: number; isRunning: boolean }>(`/api/rework/session/${bugId}`);
 }
 
-export async function apiStartTimer(bugId: string) {
+export async function apiStartTimer(bugId: string, reset: boolean = false) {
   return apiFetch<{ session: WorkSession; elapsedSeconds: number; isRunning: boolean; message: string }>('/api/rework/timer/start', {
     method: 'POST',
-    body: JSON.stringify({ bugId }),
+    body: JSON.stringify({ bugId, reset }),
   });
 }
 
@@ -269,6 +269,68 @@ export async function apiApproveDeduction(payload: { entryId: string; action: 'a
 export async function apiGetDetailedReport(params?: { fromDate?: string; toDate?: string; employeeId?: string }) {
   const q = new URLSearchParams(params as any).toString();
   return apiFetch<any>(`/api/payroll/detailed-report${q ? `?${q}` : ''}`);
+}
+
+export async function apiDownloadPayrollCsv(
+  filename?: string,
+  params?: { fromDate?: string; toDate?: string; employeeId?: string }
+): Promise<{ success: boolean; csvText: string; rowCount: number; filename: string }> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const queryParams = new URLSearchParams();
+  if (token) queryParams.set('token', token);
+  if (params?.fromDate) queryParams.set('fromDate', params.fromDate);
+  if (params?.toDate) queryParams.set('toDate', params.toDate);
+  if (params?.employeeId) queryParams.set('employeeId', params.employeeId);
+
+  const url = `/api/payroll/export-csv${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.statusText);
+    throw new Error(`Failed to export CSV (${res.status}): ${errText}`);
+  }
+
+  const csvText = await res.text();
+  const targetFilename = filename || `worktrack_rework_analytics_${new Date().toISOString().slice(0, 10)}.csv`;
+
+  // Trigger download with object URL and fallback to data URI
+  try {
+    const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = blobUrl;
+    a.setAttribute('download', targetFilename);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (document.body.contains(a)) document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    }, 500);
+  } catch {
+    // Data URI fallback
+    const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvText}`);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = encodedUri;
+    a.setAttribute('download', targetFilename);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (document.body.contains(a)) document.body.removeChild(a);
+    }, 500);
+  }
+
+  const rowCount = Math.max(0, csvText.trim().split('\n').length - 1);
+  return { success: true, csvText, rowCount, filename: targetFilename };
 }
 
 // System & Notifications

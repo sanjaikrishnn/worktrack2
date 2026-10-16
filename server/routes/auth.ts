@@ -9,9 +9,10 @@ export const authRouter = Router();
 const sessions = new Map<string, { userId: string; expiresAt: number }>();
 
 export async function getSessionUser(req: Request): Promise<User | null> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return null;
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  let token = req.headers.authorization ? req.headers.authorization.replace(/^Bearer\s+/i, '').trim() : '';
+  if (!token && req.query?.token) {
+    token = String(req.query.token).trim();
+  }
   if (!token) return null;
 
   // 1. Check local cache

@@ -4,7 +4,7 @@ interface WorkTrackLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   variant?: 'horizontal' | 'stacked' | 'icon-only';
-  theme?: 'light' | 'dark' | 'brand';
+  theme?: 'light' | 'dark' | 'brand' | 'sandal';
 }
 
 export const WorkTrackLogo: React.FC<WorkTrackLogoProps> = ({
@@ -13,18 +13,26 @@ export const WorkTrackLogo: React.FC<WorkTrackLogoProps> = ({
   variant = 'horizontal',
   theme = 'brand',
 }) => {
-  // Color configuration
-  const color =
-    theme === 'dark' ? '#FFFFFF' : theme === 'brand' ? '#2563EB' : '#12345A';
+  // Brand colors: Green #2E6B50 and Sandal #DCC7A1
+  const greenColor = '#2E6B50';
+  const sandalColor = '#DCC7A1';
+  const darkSandal = '#C6B086';
+
+  const strokeColor =
+    theme === 'dark' ? sandalColor : theme === 'sandal' ? greenColor : greenColor;
+  const fillColor =
+    theme === 'dark' ? '#163A2B' : theme === 'sandal' ? '#FAF6EF' : '#FAF6EF';
+  const symbolColor =
+    theme === 'dark' ? sandalColor : theme === 'sandal' ? greenColor : greenColor;
   const textColor =
-    theme === 'dark' ? '#FFFFFF' : theme === 'brand' ? '#12345A' : '#172033';
+    theme === 'dark' ? '#FAF6EF' : theme === 'sandal' ? '#172033' : '#172033';
 
   // Dimension scaling
   const iconSizes = {
-    sm: 'w-6 h-6',
-    md: 'w-8 h-8',
-    lg: 'w-11 h-11',
-    xl: 'w-16 h-16',
+    sm: 'w-7 h-7',
+    md: 'w-9 h-9',
+    lg: 'w-12 h-12',
+    xl: 'w-20 h-20',
   };
 
   const textSizes = {
@@ -34,29 +42,45 @@ export const WorkTrackLogo: React.FC<WorkTrackLogoProps> = ({
     xl: 'text-4xl font-black tracking-tight',
   };
 
-  // The distinctive "WT" mark with circular rework arrow (Image 2)
+  // Exact circular WorkTrack emblem with WT monogram and circular rework loop arrow (as uploaded in image 1)
   const LogoIcon = (
     <svg
-      viewBox="0 0 100 80"
-      fill="currentColor"
+      viewBox="0 0 200 200"
       xmlns="http://www.w3.org/2000/svg"
-      className={`${iconSizes[size]} shrink-0`}
-      style={{ color }}
+      className={`${iconSizes[size]} shrink-0 drop-shadow-xs`}
       aria-hidden="true"
     >
-      {/* Letter 'W' left part */}
-      <polygon points="12,24 22,24 33,52 44,24 53,24 39,60 27,60" />
-      <polygon points="26,60 14,24 4,24 18,60" />
-
-      {/* Letter 'T' horizontal bar and stem */}
-      <polygon points="32,18 72,18 72,26 57,26 57,60 47,60 47,26 32,26" />
-
-      {/* Rework circular loop arrow from right of T curving back */}
-      <path
-        d="M 68,22 C 82,22 88,32 88,42 C 88,54 80,63 68,64 L 68,56 C 75,55 80,49 80,42 C 80,35 75,29 68,29 Z"
+      {/* Outer circular badge */}
+      <circle
+        cx="100"
+        cy="100"
+        r="93"
+        stroke={strokeColor}
+        strokeWidth="7"
+        fill={fillColor}
       />
-      {/* Arrowhead pointing bottom-left */}
-      <polygon points="61,64 73,55 73,73" />
+
+      <g fill={symbolColor}>
+        {/* Leftmost slant of W */}
+        <polygon points="23,76 45,76 60,112 40,112" />
+        <polygon points="23,76 49,133 70,133 46,76" />
+
+        {/* Center apex and right slant of W */}
+        <polygon points="49,133 76,88 95,88 68,133" />
+        <polygon points="76,88 95,133 115,133 96,88" />
+
+        {/* T horizontal top bar */}
+        <polygon points="63,63 146,63 139,78 68,78" />
+
+        {/* T vertical central stem */}
+        <polygon points="97,78 115,78 115,133 97,133" />
+
+        {/* Clockwise rework loop arc */}
+        <path d="M 140,63 C 163,66 177,83 177,105 C 177,124 163,140 142,143 L 142,126 C 153,124 161,115 161,105 C 161,92 152,80 139,78 Z" />
+
+        {/* Arrowhead pointing counter-clockwise / back to the rework loop */}
+        <polygon points="120,125 142,105 142,145" />
+      </g>
     </svg>
   );
 
@@ -69,17 +93,17 @@ export const WorkTrackLogo: React.FC<WorkTrackLogoProps> = ({
       <div className={`flex flex-col items-center gap-2 ${className}`}>
         {LogoIcon}
         <span className={`${textSizes[size]}`} style={{ color: textColor }}>
-          WorkTrack
+          Work<span style={{ color: greenColor }}>Track</span>
         </span>
       </div>
     );
   }
 
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center gap-3 ${className}`}>
       {LogoIcon}
       <span className={`${textSizes[size]}`} style={{ color: textColor }}>
-        Work<span className="text-[#2563EB]">Track</span>
+        Work<span style={{ color: greenColor }}>Track</span>
       </span>
     </div>
   );

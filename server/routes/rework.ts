@@ -41,7 +41,7 @@ reworkRouter.get('/session/:bugId', requireAuth, async (req: Request, res: Respo
 // POST /api/rework/timer/start - Start or resume server-authoritative timer in PostgreSQL
 reworkRouter.post('/timer/start', requireAuth, async (req: Request, res: Response) => {
   const user = (req as any).user as User;
-  const { bugId } = req.body;
+  const { bugId, reset } = req.body;
 
   if (!bugId) {
     return res.status(400).json({ error: 'Bug ID is required.' });
@@ -60,9 +60,9 @@ reworkRouter.post('/timer/start', requireAuth, async (req: Request, res: Respons
     const now = new Date().toISOString();
     let session = await pgDb.getWorkSession(bug.bugId, user.id);
 
-    if (!session) {
+    if (!session || reset) {
       session = {
-        id: `ws_${crypto.randomBytes(6).toString('hex')}`,
+        id: session?.id || `ws_${crypto.randomBytes(6).toString('hex')}`,
         bugId: bug.bugId,
         employeeId: user.id,
         startedAt: now,

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Outer Circular Ring in Forest Green #2E6B50 and Sandal #DCC7A1 fill -->
+  <circle cx="100" cy="100" r="93" stroke="#2E6B50" stroke-width="7" fill="#FAF6EF" />
+  <circle cx="100" cy="100" r="87" stroke="#DCC7A1" stroke-width="2" fill="none" opacity="0.8" />
+  
+  <g fill="#2E6B50">
+    <!-- W left slant -->
+    <polygon points="23,76 45,76 60,112 40,112" />
+    <polygon points="23,76 49,133 70,133 46,76" />
+    
+    <!-- W center apex and right slant -->
+    <polygon points="49,133 76,88 95,88 68,133" />
+    <polygon points="76,88 95,133 115,133 96,88" />
+    
+    <!-- T horizontal top bar -->
+    <polygon points="63,63 146,63 139,78 68,78" />
+    
+    <!-- T vertical central stem -->
+    <polygon points="97,78 115,78 115,133 97,133" />
+    
+    <!-- Clockwise rework loop arrow -->
+    <!-- Arc path -->
+    <path d="M 140,63 C 163,66 177,83 177,105 C 177,124 163,140 142,143 L 142,126 C 153,124 161,115 161,105 C 161,92 152,80 139,78 Z" />
+    
+    <!-- Arrowhead pointing back/down-left -->
+    <polygon points="120,125 142,105 142,145" />
+  </g>
+</svg>
