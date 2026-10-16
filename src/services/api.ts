@@ -62,6 +62,21 @@ export async function apiLogin(identifier: string, password: string, role?: stri
   return data;
 }
 
+export async function apiRegister(userData: {
+  name: string;
+  email: string;
+  empId: string;
+  password: string;
+  role: string;
+}) {
+  const data = await apiFetch<{ token: string; user: User; message: string }>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+  setAuthToken(data.token);
+  return data;
+}
+
 export async function apiGetMe() {
   return apiFetch<{ user: User }>('/api/auth/me');
 }

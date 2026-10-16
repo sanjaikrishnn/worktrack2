@@ -1,321 +1,278 @@
-import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Eye, EyeOff, Lock, User, AlertCircle, CheckCircle2, ArrowRight, Database, KeyRound } from 'lucide-react';
-import { apiLogin, apiActivateAccount, apiGetDatabaseStatus } from '../services/api';
-import { User as UserType } from '../types';
+import React, { useState } from 'react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Users,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+} from 'lucide-react';
+import { WorkTrackLogo } from '../components/WorkTrackLogo';
+import { apiLogin } from '../services/api';
+import { User } from '../types';
 
 interface LoginPageProps {
-  onLoginSuccess: (user: UserType) => void;
+  onLoginSuccess: (user: User) => void;
+  onNavigateSignup: () => void;
+  onNavigateHome: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({
+  onLoginSuccess,
+  onNavigateSignup,
+  onNavigateHome,
+}) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'employee' | 'tester' | 'manager'>('employee');
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  // Account activation flow state
-  const [isActivationMode, setIsActivationMode] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Database status state
-  const [dbStatus, setDbStatus] = useState<{
-    connected: boolean;
-    users: number;
-    isExternal: boolean;
-    database: string;
-  } | null>(null);
-
-  useEffect(() => {
-    apiGetDatabaseStatus()
-      .then((res) => {
-        setDbStatus({
-          connected: res.connected,
-          users: res.users,
-          isExternal: res.isExternal,
-          database: res.database,
-        });
-      })
-      .catch((err) => {
-        console.warn('Could not query database status:', err);
-      });
-  }, []);
+  const [forgotMsg, setForgotMsg] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier || !password) {
+    setError('');
+    setForgotMsg('');
+
+    if (!identifier.trim() || !password) {
       setError('Please enter both Email or Employee ID and Password.');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
-      setSuccessMsg('');
-      const res = await apiLogin(identifier, password);
+      const res = await apiLogin(identifier.trim(), password, role);
       onLoginSuccess(res.user);
     } catch (err: any) {
-      const msg = err.message || '';
-      if (msg.includes('Aborted') || msg.includes('RuntimeError')) {
-        setError('Database engine is syncing. Please click Sign In again.');
-      } else {
-        setError(msg || 'Login failed. Please check your credentials.');
-      }
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleActivate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!identifier || !newPassword) {
-      setError('Please enter Employee ID/Email and your new password.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError('');
-      const res = await apiActivateAccount(identifier, newPassword);
-      setSuccessMsg(res.message);
-      setIsActivationMode(false);
-      setPassword(newPassword);
-    } catch (err: any) {
-      setError(err.message || 'Failed to activate account.');
-    } finally {
-      setLoading(false);
-    }
+  const handleForgotPassword = () => {
+    setForgotMsg('Password reset instructions can be retrieved from your system administrator.');
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-[#E2E8F0] grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
-        {/* Left Branding Showcase */}
-        <div className="lg:col-span-5 bg-corporate-gradient p-8 sm:p-10 flex flex-col justify-between text-white relative overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-teal-400/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-gradient-to-br from-[#EBF3FD] via-[#F3F7FD] to-[#E5EDFA] flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
+      {/* Decorative Floating Geometry */}
+      <div className="absolute top-12 right-20 w-8 h-8 opacity-30">
+        <svg viewBox="0 0 100 100" fill="#3B82F6">
+          <circle cx="50" cy="50" r="40" />
+        </svg>
+      </div>
+      <div className="absolute bottom-16 left-16 w-10 h-10 opacity-30">
+        <svg viewBox="0 0 100 100" fill="#60A5FA">
+          <polygon points="50,15 90,85 10,85" />
+        </svg>
+      </div>
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-xl">
-                <ShieldCheck className="w-7 h-7 text-teal-300 stroke-[2.2]" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-white">WorkTrack</h1>
-                <p className="text-xs text-teal-200 font-semibold tracking-wide uppercase">PostgreSQL Database Engine</p>
-              </div>
-            </div>
-            <p className="text-sm text-slate-100 font-normal mt-2 leading-relaxed opacity-90">
-              Rework-Aware Task Tracking & Payroll Deduction Management
-            </p>
+      {/* Top back button */}
+      <div className="w-full max-w-md mb-3 flex items-center justify-between">
+        <button
+          onClick={onNavigateHome}
+          className="text-xs font-semibold text-slate-500 hover:text-blue-600 flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
+        </button>
+      </div>
 
-            {/* Database Engine Status Badge */}
-            <div className="my-8 p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 text-left relative">
-              <div className="flex items-center gap-2 mb-2">
-                <Database className="w-4 h-4 text-teal-300" />
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-200">Database Engine</span>
-              </div>
-              <p className="text-sm font-semibold text-white">
-                {dbStatus?.isExternal ? 'Cloud PostgreSQL Server' : 'Local PostgreSQL 18 Engine'}
-              </p>
-              <div className="mt-3 flex items-center gap-2 text-[11px] text-teal-200 font-bold bg-teal-950/40 py-1 px-3 rounded-full border border-teal-500/30 w-fit">
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-300" />
-                {dbStatus ? `${dbStatus.users} Registered Employee Accounts` : 'Connecting to Database...'}
-              </div>
-            </div>
-          </div>
+      {/* Main Login Card matching Image 1 Right Screen */}
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200/80 p-8 sm:p-10 relative z-10 text-center">
+        {/* Top Illustration (Laptop with tasks checklist, bug badge, clock, and bar chart) */}
+        <div className="flex justify-center mb-5">
+          <div className="relative w-48 h-32 flex items-center justify-center">
+            {/* Soft decorative background circles */}
+            <div className="absolute w-36 h-28 bg-blue-50/80 rounded-full blur-md" />
 
-          {/* Pillars */}
-          <div className="relative z-10 pt-4 border-t border-white/15 text-xs space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-teal-200">Authoritative Security:</p>
-            <div className="flex items-center gap-2 text-slate-100 opacity-90">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-300" />
-              <span>PBKDF2-SHA512 password hashing & token sessions</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-100 opacity-90">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-300" />
-              <span>Server-enforced role permissions (Employee, QA, Manager)</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-100 opacity-90">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-300" />
-              <span>Permanent relational database records (PostgreSQL)</span>
-            </div>
+            {/* Laptop Base & Screen */}
+            <svg
+              viewBox="0 0 200 140"
+              className="w-full h-full drop-shadow-md overflow-visible"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Laptop Screen Bezel */}
+              <rect x="36" y="22" width="128" height="84" rx="8" fill="#1E293B" />
+              {/* Screen Display */}
+              <rect x="42" y="28" width="116" height="72" rx="4" fill="#F8FAFC" />
+              
+              {/* Checklist lines on screen */}
+              <rect x="52" y="38" width="12" height="12" rx="3" fill="#2563EB" />
+              <path d="M55 44 L58 47 L62 41" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="70" y="42" width="55" height="4" rx="2" fill="#CBD5E1" />
+
+              <rect x="52" y="56" width="12" height="12" rx="3" fill="#2563EB" />
+              <path d="M55 62 L58 65 L62 59" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="70" y="60" width="45" height="4" rx="2" fill="#CBD5E1" />
+
+              <rect x="52" y="74" width="12" height="12" rx="3" fill="#E2E8F0" />
+              <rect x="70" y="78" width="50" height="4" rx="2" fill="#E2E8F0" />
+
+              {/* Laptop Base & Keyboard */}
+              <path d="M20 108 L180 108 L168 116 L32 116 Z" fill="#94A3B8" />
+              <rect x="85" y="109" width="30" height="3" rx="1.5" fill="#64748B" />
+
+              {/* Floating Bug Badge (Top Right) */}
+              <g transform="translate(142, 14)">
+                <circle cx="16" cy="16" r="15" fill="#FEE2E2" stroke="#FCA5A5" strokeWidth="1.5" />
+                {/* Bug Icon in Badge */}
+                <path
+                  d="M16 9 C13.5 9 11.5 11 11.5 13.5 C11.5 15.2 12.5 16.6 14 17.4 L14 23 C14 24.1 14.9 25 16 25 C17.1 25 18 24.1 18 23 L18 17.4 C19.5 16.6 20.5 15.2 20.5 13.5 C20.5 11 18.5 9 16 9 Z"
+                  fill="#EF4444"
+                />
+                <line x1="9" y1="16" x2="13" y2="16" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="19" y1="16" x2="23" y2="16" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="10" y1="21" x2="14" y2="20" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="18" y1="20" x2="22" y2="21" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+              </g>
+
+              {/* Floating Clock Badge (Right) */}
+              <g transform="translate(148, 52)">
+                <circle cx="14" cy="14" r="13" fill="#EFF6FF" stroke="#93C5FD" strokeWidth="1.5" />
+                <circle cx="14" cy="14" r="11" fill="#FFFFFF" />
+                <polyline points="14,8 14,14 18,16" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+
+              {/* Mini Bar Chart Graphic (Bottom Right) */}
+              <g transform="translate(162, 85)">
+                <rect x="0" y="16" width="5" height="14" rx="1.5" fill="#93C5FD" />
+                <rect x="7" y="9" width="5" height="21" rx="1.5" fill="#60A5FA" />
+                <rect x="14" y="2" width="5" height="28" rx="1.5" fill="#2563EB" />
+              </g>
+            </svg>
           </div>
         </div>
 
-        {/* Right Form Container */}
-        <div className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white">
-          <div className="max-w-md w-full mx-auto">
-            <div className="mb-6">
-              <h2 className="text-2xl font-black text-[#172033] tracking-tight">
-                {isActivationMode ? 'Activate Account' : 'Employee Login'}
-              </h2>
-              <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-                {isActivationMode
-                  ? 'Set up your secure password for your WorkTrack account'
-                  : 'Enter your organizational credentials to access your portal'}
-              </p>
-            </div>
-
-            {/* Empty State Banner if Database is empty */}
-            {dbStatus && dbStatus.users === 0 && (
-              <div className="mb-5 p-4 bg-amber-50 text-amber-900 text-xs rounded-2xl border border-amber-200 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-amber-800">
-                  <Database className="w-4 h-4 text-amber-600" />
-                  <span>Database Empty State</span>
-                </div>
-                <p>
-                  PostgreSQL is connected but contains no employee accounts. Initialize the schema and dataset using{' '}
-                  <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-[11px]">database/dataset.sql</code>.
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-5 p-3.5 bg-rose-50 text-rose-800 text-xs rounded-xl flex items-center gap-2.5 border border-rose-200">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {successMsg && (
-              <div className="mb-5 p-3.5 bg-teal-50 text-teal-800 text-xs rounded-xl flex items-center gap-2.5 border border-teal-200">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-teal-600" />
-                <span>{successMsg}</span>
-              </div>
-            )}
-
-            {!isActivationMode ? (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#172033] mb-1.5">
-                    Email or Employee ID <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="e.g. EMP001 or john.doe@worktrack.com"
-                      className="w-full px-4 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all pl-10 text-slate-900 font-medium"
-                    />
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#172033] mb-1.5">
-                    Password <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your account password"
-                      className="w-full px-4 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all pl-10 pr-10 text-slate-900 font-medium"
-                    />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-2 py-3 px-4 bg-corporate-gradient text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/25 hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? 'Authenticating...' : 'Sign In to WorkTrack'}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleActivate} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#172033] mb-1.5">
-                    Employee ID or Email <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. EMP001"
-                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#172033] mb-1.5">
-                    New Secure Password (min 6 chars) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#172033] mb-1.5">
-                    Confirm Password <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 font-medium"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-2 py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  {loading ? 'Activating...' : 'Activate & Set Password'}
-                </button>
-              </form>
-            )}
-
-            <div className="mt-6 flex items-center justify-between text-xs text-[#64748B]">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsActivationMode(!isActivationMode);
-                  setError('');
-                  setSuccessMsg('');
-                }}
-                className="text-blue-600 hover:underline font-semibold cursor-pointer"
-              >
-                {isActivationMode ? '← Back to Login' : 'First time? Activate Account / Set Password'}
-              </button>
-            </div>
+        {/* WorkTrack Logo with Image 2 Logo Mark */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="cursor-pointer" onClick={onNavigateHome}>
+            <WorkTrackLogo size="lg" theme="brand" />
           </div>
+          <h2 className="text-2xl font-black text-[#172033] tracking-tight mt-3">
+            Welcome Back
+          </h2>
+          <p className="text-xs text-slate-500 mt-1 font-medium">
+            Sign in to continue to your workspace.
+          </p>
+        </div>
+
+        {/* Error and message alerts */}
+        {error && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-700 text-left">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {forgotMsg && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2 text-xs text-blue-700 text-left">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-500" />
+            <span>{forgotMsg}</span>
+          </div>
+        )}
+
+        {/* Login Form matching Image 1 Right Screen */}
+        <form onSubmit={handleLogin} className="space-y-3.5 text-left">
+          {/* 1. Email or Employee ID */}
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+              <Mail className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              required
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="Email or Employee ID"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium"
+            />
+          </div>
+
+          {/* 2. Password */}
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+              <Lock className="w-4 h-4" />
+            </div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* 3. Role Selector */}
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+              <Users className="w-4 h-4" />
+            </div>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as any)}
+              className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium cursor-pointer"
+            >
+              <option value="employee">Employee</option>
+              <option value="tester">Tester (QA)</option>
+              <option value="manager">Manager</option>
+            </select>
+          </div>
+
+          {/* Remember Me & Forgot Password Row */}
+          <div className="flex items-center justify-between text-xs pt-1">
+            <label className="flex items-center gap-2 text-slate-600 cursor-pointer font-medium">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+              />
+              <span>Remember Me</span>
+            </label>
+
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-blue-600 hover:underline font-bold cursor-pointer"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          {/* Submit Button: Login */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-3 py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? 'Authenticating...' : 'Login'}
+          </button>
+        </form>
+
+        {/* Footer: Don't have an account? Sign up */}
+        <div className="mt-6 text-center text-xs text-slate-500 font-medium">
+          Don't have an account?{' '}
+          <button
+            onClick={onNavigateSignup}
+            className="text-blue-600 hover:underline font-bold cursor-pointer"
+          >
+            Sign up
+          </button>
         </div>
       </div>
     </div>

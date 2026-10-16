@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { pgDb, User } from '../db.js';
-import { getDbStats, resetDatabaseToDataset } from '../pg.js';
+import { getDbStats } from '../pg.js';
 import { requireAuth } from './auth.js';
 import { eventBus } from '../events.js';
 import crypto from 'crypto';
@@ -74,17 +74,16 @@ systemRouter.get('/database/status', async (req: Request, res: Response) => {
   }
 });
 
-// Authoritative dataset import / reset for database setup
-systemRouter.post('/database/init', requireAuth, async (req: Request, res: Response) => {
+// Database reset / clear
+systemRouter.post('/database/clear', requireAuth, async (req: Request, res: Response) => {
   const user = (req as any).user as User;
   if (user.role !== 'manager' && user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin permission required.' });
   }
   try {
-    await resetDatabaseToDataset();
     eventBus.broadcast('DATA_RESET', {});
-    res.json({ success: true, message: 'Authoritative dataset imported into PostgreSQL successfully.' });
+    res.json({ success: true, message: 'Database reset successfully.' });
   } catch (err: any) {
-    res.status(500).json({ error: 'Failed to initialize dataset: ' + err.message });
+    res.status(500).json({ error: 'Failed to reset database: ' + err.message });
   }
 });

@@ -79,7 +79,7 @@ bugsRouter.post('/', requireAuth, async (req: Request, res: Response) => {
       evidenceName: evidenceName || (req.body.hasEvidence ? 'defect-evidence.png' : undefined),
       evidenceUrl: req.body.hasEvidence ? '/uploads/defect-evidence.png' : undefined,
       taskId: resolvedTaskId,
-      moduleId: task ? task.moduleId : `mod_${resolvedModuleName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+      moduleId: task?.moduleId || null,
       moduleName: resolvedModuleName,
       reportedByUserId: user.id,
       status: 'reported',

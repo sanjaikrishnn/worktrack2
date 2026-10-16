@@ -9,7 +9,7 @@ import { bugsRouter } from './server/routes/bugs.js';
 import { reworkRouter } from './server/routes/rework.js';
 import { payrollRouter } from './server/routes/payroll.js';
 import { systemRouter } from './server/routes/system.js';
-import { initDatabase } from './server/pg.js';
+import { initDatabase, closeDatabase } from './server/pg.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,6 +66,17 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 WorkTrack Server running on http://0.0.0.0:${PORT}`);
   });
+
+  const handleShutdown = async (signal: string) => {
+    console.log(`\n🛑 Received ${signal}, closing database cleanly...`);
+    try {
+      await closeDatabase();
+    } catch {}
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 }
 
 startServer().catch((err) => {

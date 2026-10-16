@@ -78,6 +78,93 @@ export function requireRole(allowedRoles: string[]) {
   };
 }
 
+// POST /api/auth/register - Create employee/tester/manager account in PostgreSQL
+authRouter.post('/register', async (req: Request, res: Response) => {
+  const { name, email, empId, password, role } = req.body;
+
+  if (!name || !email || !empId || !password) {
+    return res.status(400).json({ error: 'Full Name, Work Email, Employee ID, and Password are required.' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+  }
+
+  const validRoles = ['employee', 'tester', 'manager'];
+  const userRole = validRoles.includes(role?.toLowerCase()) ? role.toLowerCase() : 'employee';
+
+  try {
+    // Check if user with email or empId already exists
+    const existing = await pgDb.findUserByIdentifier(email);
+    const existingEmp = await pgDb.findUserByIdentifier(empId);
+    if (existing || existingEmp) {
+      return res.status(400).json({ error: 'An account with this Email or Employee ID already exists.' });
+    }
+
+    const { hash, salt } = hashPassword(password);
+    const userId = `usr_${crypto.randomBytes(6).toString('hex')}`;
+    const now = new Date().toISOString();
+
+    const department =
+      userRole === 'tester'
+        ? 'QA & Testing'
+        : userRole === 'manager'
+        ? 'Engineering Management'
+        : 'IT / Engineering';
+
+    const designation =
+      userRole === 'tester'
+        ? 'QA Test Engineer'
+        : userRole === 'manager'
+        ? 'Engineering Manager'
+        : 'Software Engineer';
+
+    const hourlyRate = userRole === 'tester' ? 280 : userRole === 'manager' ? 500 : 300;
+
+    const newUser: User = {
+      id: userId,
+      empId: empId.trim().toUpperCase(),
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      passwordHash: hash,
+      salt,
+      role: userRole as any,
+      department,
+      designation,
+      hourlyRate,
+      avatarUrl: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200`,
+      active: true,
+      createdAt: now,
+    };
+
+    await pgDb.createUser(newUser);
+
+    // Create session token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    try {
+      await query(
+        'INSERT INTO auth_sessions (token, user_id, expires_at) VALUES ($1, $2, $3);',
+        [token, newUser.id, expiresAt.toISOString()]
+      );
+    } catch (e: any) {
+      console.warn('Could not persist session to auth_sessions:', e.message);
+    }
+    sessions.set(token, { userId: newUser.id, expiresAt: expiresAt.getTime() });
+
+    const { passwordHash: _, salt: __, ...safeUser } = newUser;
+
+    res.status(201).json({
+      token,
+      user: safeUser,
+      message: 'Account created successfully! Welcome to WorkTrack.',
+    });
+  } catch (err: any) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Failed to create account: ' + err.message });
+  }
+});
+
 // POST /api/auth/login - Authenticate real employee against PostgreSQL
 authRouter.post('/login', async (req: Request, res: Response) => {
   const { identifier, password, role } = req.body;
@@ -111,9 +198,9 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
 
     // Role verification: role is authoritative from PostgreSQL database
-    if (role && role !== 'auto' && user.role !== role && user.role !== 'admin') {
+    if (role && role !== 'auto' && user.role.toLowerCase() !== role.toLowerCase() && user.role !== 'admin') {
       return res.status(403).json({
-        error: `Your account is registered as '${user.role}', not '${role}'. Please switch to the correct role portal.`,
+        error: `Your account is registered as '${user.role}', not '${role}'. Please switch to the correct role.`,
       });
     }
 

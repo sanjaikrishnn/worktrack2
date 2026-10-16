@@ -17,6 +17,8 @@ import {
   PlusCircle,
 } from 'lucide-react';
 
+import { WorkTrackLogo } from './WorkTrackLogo';
+
 interface SidebarProps {
   user: User;
   activeTab: string;
@@ -82,17 +84,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header */}
       <div className="h-16 px-4 flex items-center justify-between border-b border-slate-700/60 bg-[#0E2847]">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-corporate-gradient flex items-center justify-center text-white shadow-md shadow-blue-900/40 shrink-0">
-            <ShieldCheck className="w-5 h-5 text-teal-300 stroke-[2.2]" />
-          </div>
-          {!isCollapsed && (
-            <div className="overflow-hidden whitespace-nowrap">
-              <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                WorkTrack
-              </h1>
-              <p className="text-[10px] text-teal-300 font-medium tracking-wide uppercase">Industrial Quality</p>
-            </div>
-          )}
+          <WorkTrackLogo
+            size="md"
+            theme="dark"
+            variant={isCollapsed ? 'icon-only' : 'horizontal'}
+          />
         </div>
 
         {/* Desktop Collapse Toggle */}

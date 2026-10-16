@@ -12,6 +12,8 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { CreateTaskModal } from './components/CreateTaskModal';
 import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { LandingPage } from './pages/LandingPage';
 import { EmployeeDashboard } from './pages/EmployeeDashboard';
 import { TaskDetailsPage } from './pages/TaskDetailsPage';
 import { TesterDashboard } from './pages/TesterDashboard';
@@ -27,6 +29,7 @@ import { ProfilePage } from './pages/ProfilePage';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authView, setAuthView] = useState<'landing' | 'login' | 'signup'>('landing');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [bugs, setBugs] = useState<BugReport[]>([]);
@@ -127,6 +130,7 @@ export default function App() {
   const handleLogout = async () => {
     await apiLogout();
     setCurrentUser(null);
+    setAuthView('landing');
   };
 
   const handleOpenTask = (taskId: string) => {
@@ -154,9 +158,32 @@ export default function App() {
     );
   }
 
-  // Not logged in -> Show Screen 1 Login
+  // Not logged in -> Render Landing Page, Signup, or Login
   if (!currentUser) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    if (authView === 'signup') {
+      return (
+        <SignupPage
+          onLoginSuccess={handleLoginSuccess}
+          onNavigateLogin={() => setAuthView('login')}
+          onNavigateHome={() => setAuthView('landing')}
+        />
+      );
+    }
+    if (authView === 'login') {
+      return (
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          onNavigateSignup={() => setAuthView('signup')}
+          onNavigateHome={() => setAuthView('landing')}
+        />
+      );
+    }
+    return (
+      <LandingPage
+        onNavigateLogin={() => setAuthView('login')}
+        onNavigateSignup={() => setAuthView('signup')}
+      />
+    );
   }
 
   // Apply search filter if present

@@ -56,6 +56,37 @@ export async function getDb(): Promise<{
 
 let initPromise: Promise<void> | null = null;
 
+function cleanupStaleLocks(dataDir: string) {
+  if (!fs.existsSync(dataDir)) return;
+  const lockFiles = ['postmaster.pid', 'postmaster.opts'];
+  for (const file of lockFiles) {
+    const fullPath = path.resolve(dataDir, file);
+    if (fs.existsSync(fullPath)) {
+      try {
+        fs.unlinkSync(fullPath);
+        console.log(`🧹 Cleaned up stale ${file} lock file`);
+      } catch (e: any) {
+        console.warn(`Failed to remove ${file}:`, e.message);
+      }
+    }
+  }
+}
+
+export async function closeDatabase(): Promise<void> {
+  if (pgPool) {
+    try { await pgPool.end(); } catch {}
+    pgPool = null;
+  }
+  if (pgliteInstance) {
+    try { await pgliteInstance.close(); } catch {}
+    pgliteInstance = null;
+  }
+  const dataDir = path.resolve(process.cwd(), 'data', 'postgres_data');
+  cleanupStaleLocks(dataDir);
+  isInitialized = false;
+  initPromise = null;
+}
+
 async function resetEngine(): Promise<void> {
   console.warn('⚠️ Initiating PostgreSQL engine recovery...');
   try {
@@ -64,9 +95,7 @@ async function resetEngine(): Promise<void> {
       pgliteInstance = null;
     }
     const dataDir = path.resolve(process.cwd(), 'data', 'postgres_data');
-    if (fs.existsSync(dataDir)) {
-      fs.rmSync(dataDir, { recursive: true, force: true });
-    }
+    cleanupStaleLocks(dataDir);
   } catch (err: any) {
     console.warn('Warning during storage cleanup:', err.message);
   }
@@ -168,15 +197,7 @@ export async function initDatabase(): Promise<void> {
 
     if (!pgPool) {
       const dataDir = path.resolve(process.cwd(), 'data', 'postgres_data');
-
-      // Remove stale lock files if any
-      const pidFile = path.resolve(dataDir, 'postmaster.pid');
-      if (fs.existsSync(pidFile)) {
-        try {
-          fs.unlinkSync(pidFile);
-          console.log('🧹 Cleaned up stale postmaster.pid lock file');
-        } catch {}
-      }
+      cleanupStaleLocks(dataDir);
 
       try {
         if (!fs.existsSync(dataDir)) {
@@ -188,23 +209,32 @@ export async function initDatabase(): Promise<void> {
         console.log(`✅ PostgreSQL engine active: ${(versionRes.rows[0] as any).version}`);
         isExternal = false;
       } catch (err: any) {
-        console.warn('⚠️ Storage directory corrupted or aborted:', err.message, '- recreating fresh store...');
+        console.warn('⚠️ Storage directory init issue:', err.message, '- attempting lock cleanup and recovery...');
+        cleanupStaleLocks(dataDir);
         try {
           if (pgliteInstance) {
             try { await pgliteInstance.close(); } catch {}
             pgliteInstance = null;
           }
-          if (fs.existsSync(dataDir)) {
-            fs.rmSync(dataDir, { recursive: true, force: true });
-          }
-          fs.mkdirSync(dataDir, { recursive: true });
           pgliteInstance = new PGlite(dataDir);
           await pgliteInstance.waitReady;
-          console.log('✅ Fresh PostgreSQL storage initialized.');
-        } catch (memErr: any) {
-          console.warn('⚠️ Fallback to in-memory PostgreSQL engine:', memErr.message);
-          pgliteInstance = new PGlite();
-          await pgliteInstance.waitReady;
+          console.log('✅ PostgreSQL storage re-opened successfully after lock cleanup.');
+          isExternal = false;
+        } catch (retryErr: any) {
+          console.warn('⚠️ Re-opening failed, falling back to clean store:', retryErr.message);
+          try {
+            if (fs.existsSync(dataDir)) {
+              fs.rmSync(dataDir, { recursive: true, force: true });
+            }
+            fs.mkdirSync(dataDir, { recursive: true });
+            pgliteInstance = new PGlite(dataDir);
+            await pgliteInstance.waitReady;
+            console.log('✅ Fresh PostgreSQL storage initialized.');
+          } catch (memErr: any) {
+            console.warn('⚠️ Fallback to in-memory PostgreSQL engine:', memErr.message);
+            pgliteInstance = new PGlite();
+            await pgliteInstance.waitReady;
+          }
         }
       }
     }
@@ -224,29 +254,11 @@ export async function initDatabase(): Promise<void> {
 
 async function runMigrationsAndDataset(): Promise<void> {
   const schemaPath = path.resolve(process.cwd(), 'database', 'schema.sql');
-  const datasetPath = path.resolve(process.cwd(), 'database', 'dataset.sql');
 
   if (fs.existsSync(schemaPath)) {
     const schemaContent = fs.readFileSync(schemaPath, 'utf8');
     await runExec(schemaContent);
     console.log('✅ PostgreSQL schema verified and applied.');
-  }
-
-  // Check if users table already has real records
-  try {
-    const userCountRes = await runQuery<{ count: string }>('SELECT COUNT(*) as count FROM users;');
-    const userCount = parseInt(userCountRes.rows[0]?.count || '0', 10);
-
-    if (userCount === 0 && fs.existsSync(datasetPath)) {
-      console.log('📦 Database is currently empty. Loading authoritative SQL dataset from database/dataset.sql...');
-      const datasetSql = fs.readFileSync(datasetPath, 'utf8');
-      await runExec(datasetSql);
-      console.log('✅ Authoritative dataset loaded into PostgreSQL.');
-    } else {
-      console.log(`📊 PostgreSQL contains ${userCount} existing user records. Preserving data.`);
-    }
-  } catch (err: any) {
-    console.error('Error verifying database contents:', err.message);
   }
 }
 
@@ -284,13 +296,5 @@ export async function getDbStats() {
       isExternal,
       error: err.message,
     };
-  }
-}
-
-export async function resetDatabaseToDataset(): Promise<void> {
-  const datasetPath = path.resolve(process.cwd(), 'database', 'dataset.sql');
-  if (fs.existsSync(datasetPath)) {
-    const datasetSql = fs.readFileSync(datasetPath, 'utf8');
-    await runExec(datasetSql);
   }
 }

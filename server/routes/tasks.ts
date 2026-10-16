@@ -67,7 +67,7 @@ tasksRouter.post('/', requireAuth, async (req: Request, res: Response) => {
       taskId,
       title,
       description: description || '',
-      moduleId: `mod_${moduleName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+      moduleId: null,
       moduleName,
       assignedToUserId,
       originalDeliveryUserId: assignedToUserId,

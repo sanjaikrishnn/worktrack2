@@ -23,9 +23,9 @@ interface CreateTaskModalProps {
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, onTaskCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [moduleName, setModuleName] = useState('Payment Gateway');
+  const [moduleName, setModuleName] = useState('Core Module');
   const [assignedToUserId, setAssignedToUserId] = useState('');
-  const [deadline, setDeadline] = useState('2025-10-25');
+  const [deadline, setDeadline] = useState(() => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [priority, setPriority] = useState<'High' | 'Medium' | 'Low'>('Medium');
   const [estimatedHours, setEstimatedHours] = useState('16');
   const [instructions, setInstructions] = useState('');
@@ -38,9 +38,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
     if (isOpen) {
       apiGetUsers().then((res) => {
         const emps = res.users.filter((u) => u.role === 'employee');
-        setEmployees(emps);
-        if (emps.length > 0 && !assignedToUserId) {
-          setAssignedToUserId(emps[0].id);
+        const fallbackUsers = emps.length > 0 ? emps : res.users;
+        setEmployees(fallbackUsers);
+        if (fallbackUsers.length > 0 && !assignedToUserId) {
+          setAssignedToUserId(fallbackUsers[0].id);
         }
       });
     }
@@ -148,19 +149,28 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                 <label className="block font-semibold text-[#172033] mb-1.5">
                   Target Module / Component <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={moduleName}
-                  onChange={(e) => setModuleName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-slate-900 font-medium"
-                >
-                  <option value="Payment Gateway">Payment Gateway</option>
-                  <option value="Login Module">Login Module</option>
-                  <option value="Reporting">Reporting Engine</option>
-                  <option value="Dashboard">Dashboard Analytics</option>
-                  <option value="UI Enhancement">UI Enhancement</option>
-                  <option value="Profile">Profile & Settings</option>
-                  <option value="Security Core">Security Core</option>
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    list="module-presets"
+                    value={moduleName}
+                    onChange={(e) => setModuleName(e.target.value)}
+                    placeholder="e.g. Payment Gateway or Custom Module"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-slate-900 font-medium"
+                  />
+                  <datalist id="module-presets">
+                    <option value="Payment Gateway" />
+                    <option value="Authentication & IAM" />
+                    <option value="Login Module" />
+                    <option value="Reporting Engine" />
+                    <option value="Dashboard Analytics" />
+                    <option value="UI Enhancement" />
+                    <option value="User Profile" />
+                    <option value="Billing & Invoicing" />
+                    <option value="Core API Services" />
+                  </datalist>
+                </div>
               </div>
 
               <div>
@@ -207,11 +217,15 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                   onChange={(e) => setAssignedToUserId(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-slate-900 font-medium"
                 >
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.empId}) — {emp.designation}
-                    </option>
-                  ))}
+                  {employees.length === 0 ? (
+                    <option value="" disabled>No employees registered yet</option>
+                  ) : (
+                    employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} ({emp.empId}) — {emp.designation || emp.role}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <p className="text-[10px] text-[#64748B] mt-1">
                   Task assignment immediately triggers live dashboard sync and alert notification.
